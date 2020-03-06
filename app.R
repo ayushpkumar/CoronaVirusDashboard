@@ -264,6 +264,13 @@ getLatestStat<- function(){
     return(f)
 }
 
+mostRecent<- function(){
+    data<- getLatestStat5()
+    d<- data[1,]
+    
+    return(paste(d$State,d$Country))
+}
+
 getLatestStat5<- function(){
     f<- coronavirus %>% select(Country = Country.Region,State = Province.State, type, cases, date) %>% group_by(Country,State, type, date) %>% summarize(totalCases = sum(cases, na.rm = T)) %>%
         pivot_wider(names_from = type, values_from = totalCases) 
@@ -272,7 +279,7 @@ getLatestStat5<- function(){
 }
 
 
-register_google(key = "XXXXXXXXXXXXXXXXXXXXX")
+register_google(key = "XXXXXXXXXXXXXXX")
 getCountrydata<- function(country){
     countryD<- coronavirus %>%
         filter(Country.Region == country) %>%
@@ -328,7 +335,7 @@ loadMap<- function(country){
     #df <- as.data.frame(cbind(lon,lat))
     
     # getting the map
-    register_google(key = "XXXXXXXXXXXXXXXXXXXXX")
+    register_google(key = "XXXXXXXXXXXXXXX")
     mapG <- get_map(location = c(lon = mean(df$Long), lat = mean(df$Lat)), zoom = 4,
                     maptype = "roadmap", scale = 2)
     
@@ -352,7 +359,7 @@ loadMapMe<- function(country){
     #lat <- df$Lat
     #df <- as.data.frame(cbind(lon,lat))
     
-    register_google(key = "XXXXXXXXXXXXXXXXXXXXX")
+    register_google(key = "XXXXXXXXXXXXXXX")
     mapG <- get_map(location = c(lon = mean(df$Long), lat = mean(df$Lat)), zoom = 4,
                     maptype = "roadmap", scale = 2)
 
@@ -453,6 +460,36 @@ plotPieC<- function(country){
 }
 
 
+getGlobalAnalyticData<- function(){
+    data<- getLatestStat()
+    data$recoveryRate<- (data$recovered / data$confirmed )* 100
+    data$deathRate<- (data$death / data$confirmed )* 100
+    return(data)
+}
+
+
+getGlobalRRate<- function(){
+    data<- getGlobalAnalyticData()
+    d<- sum(data$recovered)/sum(data$confirmed) * 100
+    return(d)
+}
+
+getGlobalDRate<- function(){
+    data<- getGlobalAnalyticData()
+    d<- sum(data$death)/sum(data$confirmed) * 100
+    return(d)
+}
+
+getRate<- function(){
+    data<- getLatestStat()
+    data$recoveryRate<- (data$recovered / data$confirmed )* 100
+    data$deathRate<- (data$death / data$confirmed )* 100
+    data=data[,-2:-4]
+    data= data %>% arrange(-recoveryRate)
+    return(data)
+    
+}
+
 
 #----------------- Data -----------------
 coronavirus<- getCoronaData()
@@ -471,7 +508,7 @@ ddff<-coronavirus %>%
     arrange(-confirmed)
 totalDeaths<-sum(which(coronavirus$type =='death'))
 totalRecovery<- sum(which(coronavirus$type =='recovered'))
-totalCases <- sum(coronavirus$cases)
+totalCases <- sum(which(coronavirus$type =='confirmed'))
 
 
 #----------------- UI -----------------
@@ -537,7 +574,27 @@ ui <- bs4Dash::dashboardPage(
                         gradientColor = "success",
                         icon = NULL,
                         value = totalRecovery
+                    ),
+                    
+                        infoBox(
+                            title = "Recovery Rate",
+                            gradientColor = "success",
+                            icon = NULL,
+                            value = getGlobalRRate()
+                        ),
+                        infoBox(
+                            title = "Death Rate",
+                            gradientColor = "warning",
+                            icon = NULL,
+                            value = getGlobalDRate()
+                        ),
+                    infoBox(
+                        title = "Most Recent Case",
+                        gradientColor = "info",
+                        icon = NULL,
+                        value = mostRecent()
                     )
+                    
                 ),
                 fluidRow(
                     bs4Dash::bs4Card(
@@ -557,11 +614,17 @@ ui <- bs4Dash::dashboardPage(
                                     Created to inform people about the spread of corona virus through out world. The data is wrangled using R, and this dashboard is created
                                     using Shiny Dashboard, FlexDashboard and BS4JDash( AdminLTE Themed)
                                   ")
+                            
                           
                          #   DT::DTOutput("latest")
                         
                         )
+                        
                     ),
+                    
+                    
+                    
+                    
                     bs4Dash::bs4Card(
                         inputId = "id9",
                         title = "Latest Reported Case",
@@ -633,7 +696,7 @@ ui <- bs4Dash::dashboardPage(
                         inputId = "id9",
                         title = "Country Specific",
                         closable = FALSE,
-                        maximizable = F,
+                        maximizable = T,
                         width = 5,
                         
                         status = "dark",
@@ -656,7 +719,7 @@ ui <- bs4Dash::dashboardPage(
                         inputId = "id9",
                         title = "5 Latest Cases",
                         closable = FALSE,
-                        maximizable = F,
+                        maximizable = T,
                         width = 6,
                         status = "dark",
                         solidHeader = FALSE,
@@ -671,7 +734,7 @@ ui <- bs4Dash::dashboardPage(
                             inputId = "id12",
                             title = "Trend of Cases in Selected Country",
                             closable = FALSE,
-                            maximizable = F,
+                            maximizable = T,
                             width = 6,
                             status = "dark",
                             solidHeader = FALSE,
@@ -703,7 +766,7 @@ ui <- bs4Dash::dashboardPage(
                         inputId = "id9",
                         title = "Distrubution Of Cases",
                         closable = FALSE,
-                        maximizable = F,
+                        maximizable = T,
                         width = 6,
                         status = "dark",
                         solidHeader = FALSE,
