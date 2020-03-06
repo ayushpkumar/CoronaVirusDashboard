@@ -272,7 +272,7 @@ getLatestStat5<- function(){
 }
 
 
-register_google(key = "AIzaSyC0jJJJcidZm4d7T-_HsSYXTkcvb8IxNaY")
+register_google(key = "XXXXXXXXXXXXXXXXXXXXX")
 getCountrydata<- function(country){
     countryD<- coronavirus %>%
         filter(Country.Region == country) %>%
@@ -328,7 +328,7 @@ loadMap<- function(country){
     #df <- as.data.frame(cbind(lon,lat))
     
     # getting the map
-    register_google(key = "AIzaSyC0jJJJcidZm4d7T-_HsSYXTkcvb8IxNaY")
+    register_google(key = "XXXXXXXXXXXXXXXXXXXXX")
     mapG <- get_map(location = c(lon = mean(df$Long), lat = mean(df$Lat)), zoom = 4,
                     maptype = "roadmap", scale = 2)
     
@@ -352,7 +352,7 @@ loadMapMe<- function(country){
     #lat <- df$Lat
     #df <- as.data.frame(cbind(lon,lat))
     
-    register_google(key = "AIzaSyC0jJJJcidZm4d7T-_HsSYXTkcvb8IxNaY")
+    register_google(key = "XXXXXXXXXXXXXXXXXXXXX")
     mapG <- get_map(location = c(lon = mean(df$Long), lat = mean(df$Lat)), zoom = 4,
                     maptype = "roadmap", scale = 2)
 
