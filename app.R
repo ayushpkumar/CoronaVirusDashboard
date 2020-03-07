@@ -271,6 +271,13 @@ mostRecent<- function(){
     return(paste(d$State,d$Country))
 }
 
+lastUpdate<- function(){
+    data<- getLatestStat5()
+    d<- data[1,]
+    
+    return(paste("UPDATED ON :",d$date))
+}
+
 getLatestStat5<- function(){
     f<- coronavirus %>% select(Country = Country.Region,State = Province.State, type, cases, date) %>% group_by(Country,State, type, date) %>% summarize(totalCases = sum(cases, na.rm = T)) %>%
         pivot_wider(names_from = type, values_from = totalCases) 
@@ -279,7 +286,7 @@ getLatestStat5<- function(){
 }
 
 
-register_google(key = "XXXXXXXXXXXXXXX")
+register_google(key = "XXXXXXXXXXXXXXXXXX")
 getCountrydata<- function(country){
     countryD<- coronavirus %>%
         filter(Country.Region == country) %>%
@@ -335,7 +342,7 @@ loadMap<- function(country){
     #df <- as.data.frame(cbind(lon,lat))
     
     # getting the map
-    register_google(key = "XXXXXXXXXXXXXXX")
+    register_google(key = "XXXXXXXXXXXXXXXXXX")
     mapG <- get_map(location = c(lon = mean(df$Long), lat = mean(df$Lat)), zoom = 4,
                     maptype = "roadmap", scale = 2)
     
@@ -359,13 +366,13 @@ loadMapMe<- function(country){
     #lat <- df$Lat
     #df <- as.data.frame(cbind(lon,lat))
     
-    register_google(key = "XXXXXXXXXXXXXXX")
+    register_google(key = "XXXXXXXXXXXXXXXXXX")
     mapG <- get_map(location = c(lon = mean(df$Long), lat = mean(df$Lat)), zoom = 4,
                     maptype = "roadmap", scale = 2)
 
     
     # plotting the map with some points on it
-    p<-ggmap(mapG) +
+    p<-ggmap(mapG,width = 800, height = 600) +
         geom_point(data= df, aes(x=Long, y=Lat, size=confirmed, color=confirmed, text=State, alpha=confirmed) ) +
         scale_size_continuous(range=c(1,30)) +
         scale_color_viridis(option="inferno", trans="log" ) +
@@ -471,13 +478,15 @@ getGlobalAnalyticData<- function(){
 getGlobalRRate<- function(){
     data<- getGlobalAnalyticData()
     d<- sum(data$recovered)/sum(data$confirmed) * 100
-    return(d)
+    getPC<-getRPC()
+    return(paste(round(d, digits = 2),'% | Change from Yesterday:',getPC,'%'))
 }
 
 getGlobalDRate<- function(){
     data<- getGlobalAnalyticData()
     d<- sum(data$death)/sum(data$confirmed) * 100
-    return(d)
+    getPC<-getDPC()
+    return(paste(round(d, digits = 2),'% | Change from Yesterday:',getPC,'%'))
 }
 
 getRate<- function(){
@@ -488,6 +497,47 @@ getRate<- function(){
     data= data %>% arrange(-recoveryRate)
     return(data)
     
+}
+
+getDPC<- function(){
+    data=coronavirus %>% 
+        filter(date < max(date)) %>%
+        select(country = Country.Region, type, cases) %>%
+        group_by(country, type) %>%
+        summarise(total_cases = sum(cases)) %>%
+        pivot_wider(names_from = type,
+                    values_from = total_cases) %>%
+        arrange(-confirmed)
+    
+    lastDaySum<- sum(data$death, na.rm = T)/sum(data$confirmed, na.rm = T)
+    
+    d23<- getAnalyticData()
+    presentDaySum<-sum(d23$death, na.rm = T)/sum(data$confirmed, na.rm = T)
+    
+    
+    increase<- (presentDaySum-lastDaySum) * 100
+    
+    return(round(increase, digits = 2))
+}
+
+getRPC<- function(){
+    data=coronavirus %>% 
+        filter(date < max(date)) %>%
+        select(country = Country.Region, type, cases) %>%
+        group_by(country, type) %>%
+        summarise(total_cases = sum(cases)) %>%
+        pivot_wider(names_from = type,
+                    values_from = total_cases) %>%
+        arrange(-confirmed)
+    
+    lastDaySum<- sum(data$recovered, na.rm = T)/sum(data$confirmed, na.rm = T)
+    
+    d23<- getAnalyticData()
+    presentDaySum<-sum(d23$recovered, na.rm = T)/sum(d23$confirmed, na.rm = T)
+    
+    increase<- (presentDaySum-lastDaySum) * 100
+    
+    return(round(increase, digits = 2))
 }
 
 
@@ -515,11 +565,14 @@ totalCases <- sum(which(coronavirus$type =='confirmed'))
 ui <- bs4Dash::dashboardPage(
     enable_preloader = FALSE,
     title = "CoronaVirus Dashboard",
-    navbar = bs4Dash::dashboardHeader(
-        "Corona Virus Details Dashboard",
-        titleWidth = 12,
-        skin = "light",
-        status = NULL,
+    navbar = bs4Dash::bs4DashNavbar(
+        bs4Badge(
+            position = "left",
+            status = "warning",
+            "Corona Virus Details Dashboard"
+        ),
+       
+        status = "dark",
         border = TRUE,
         sidebarIcon = "bars",
         compact = FALSE,
@@ -548,9 +601,16 @@ ui <- bs4Dash::dashboardPage(
     
     #----------------- Body -----------------
     body = bs4Dash::dashboardBody(
+        bs4Badge(
+            position = "left",
+            status = "warning",
+            lastUpdate(),
+            rounded = T
+        ),
         bs4Dash::bs4TabSetPanel(
             id = "panel1",
-            side = "left",
+            side = "right",
+            
             #----------------- Tab 1 -----------------
             bs4Dash::bs4TabPanel(
                 tabName =  "Summary",
@@ -558,40 +618,40 @@ ui <- bs4Dash::dashboardPage(
                     bs4Dash::infoBox(
                         title = "Total Cases",
                         status = "info",
-                        icon = NULL,
+                        
                         value = totalCases
                         
                     ),
                     infoBox(
                         title = "Total Deaths",
                         status = "danger",
-                        icon = "skull-crossbones",
+                        
                         value = as.numeric(totalDeaths)
                         
                     ),
                     infoBox(
                         title = "Total Recovered",
                         gradientColor = "success",
-                        icon = NULL,
+                        
                         value = totalRecovery
                     ),
                     
-                        infoBox(
-                            title = "Recovery Rate",
-                            gradientColor = "success",
-                            icon = NULL,
-                            value = getGlobalRRate()
-                        ),
-                        infoBox(
-                            title = "Death Rate",
-                            gradientColor = "warning",
-                            icon = NULL,
-                            value = getGlobalDRate()
-                        ),
+                    infoBox(
+                        title = "Recovery Rate",
+                        gradientColor = "success",
+                       
+                        value = getGlobalRRate()
+                    ),
+                    infoBox(
+                        title = "Death Rate",
+                        gradientColor = "warning",
+                        
+                        value = getGlobalDRate()
+                    ),
                     infoBox(
                         title = "Most Recent Case",
                         gradientColor = "info",
-                        icon = NULL,
+                        
                         value = mostRecent()
                     )
                     
@@ -609,15 +669,14 @@ ui <- bs4Dash::dashboardPage(
                         collapsible = F,
                         
                         dropdownIcon = "wrench",
-                        fluidPage(
-                            print("This dashboard uses data from Johns Hopkins University Center for Systems Science and Engineering (JHU CSSE)
-                                    Created to inform people about the spread of corona virus through out world. The data is wrangled using R, and this dashboard is created
-                                    using Shiny Dashboard, FlexDashboard and BS4JDash( AdminLTE Themed)
-                                  ")
+                        bs4Dash::bs4Card(
+                            print("This dashboard uses data from John Hopkins University Center for Systems Science and Engineering (JHU CSSE)
+                                    Created to inform people about the spread of corona virus through out world. This data is updated everyday by
+                                    sources which includes WHO ( World Health Organization ). The data is wrangled using R, and this dashboard is created
+                                    using Shiny Dashboard, FlexDashboard and BS4JDash( AdminLTE Themed )
+                                  "),
+                            width = 12
                             
-                          
-                         #   DT::DTOutput("latest")
-                        
                         )
                         
                     ),
@@ -730,20 +789,20 @@ ui <- bs4Dash::dashboardPage(
                             DT::DTOutput("countryDD")
                         )
                     ),
-                        bs4Dash::bs4Card(
-                            inputId = "id12",
-                            title = "Trend of Cases in Selected Country",
-                            closable = FALSE,
-                            maximizable = T,
-                            width = 6,
-                            status = "dark",
-                            solidHeader = FALSE,
-                            collapsible = T,
-                            
-                            dropdownIcon = "wrench",
-                            plotlyOutput("tsplotC")
-                            )
+                    bs4Dash::bs4Card(
+                        inputId = "id12",
+                        title = "Trend of Cases in Selected Country",
+                        closable = FALSE,
+                        maximizable = T,
+                        width = 6,
+                        status = "dark",
+                        solidHeader = FALSE,
+                        collapsible = T,
                         
+                        dropdownIcon = "wrench",
+                        plotlyOutput("tsplotC")
+                    )
+                    
                     
                 ),
                 fluidRow(
@@ -785,16 +844,22 @@ ui <- bs4Dash::dashboardPage(
             
             bs4Dash::bs4TabPanel(
                 tabName =  "Check Summary Data",
+                bs4Dash::bs4Card(
+                    width = 12,
                 fluidPage(
                     DT::DTOutput("sum")
+                )
                 )
             ),
             
             #----------- Tab 4 ---------
             bs4Dash::bs4TabPanel(
                 tabName =  "Check out the Data",
+                bs4Dash::bs4Card(
+                    width = 12,
                 fluidPage(
                     DT::DTOutput("coronavirus")
+                )
                 )
             )
             
@@ -803,8 +868,6 @@ ui <- bs4Dash::dashboardPage(
         
     ),
 )
-
-
 
 #----------------- Server -----------------
 server <- function(input, output, session){
@@ -817,7 +880,7 @@ server <- function(input, output, session){
     
     output$latest <- DT::renderDT({
         FF <- getLatestStat5()
-        DT::datatable(FF,options = list(lengthMenu = c(5, 30, 50), pageLength = 5))})
+        DT::datatable(FF,options = list(lengthMenu = c(5, 30, 50), pageLength = 3),fillContainer = getOption("DT.fillContainer", NULL))})
     
     output$tsplot<- renderPlotly({
         tsPlot()
@@ -864,10 +927,10 @@ server <- function(input, output, session){
     #output$countryD <- DT::renderDT(DT::datatable(getCountrydataWD(input$country)),options = list(lengthMenu = c(5, 30, 50), pageLength = 10))
     output$countryD <- DT::renderDT({
         tmp<- getCountrydataWD(input$country)
-        DT::datatable(tmp,options = list(lengthMenu = c(5, 30, 50), pageLength = 5))})
+        DT::datatable(tmp,options = list(lengthMenu = c(5, 30, 50), pageLength = 5),fillContainer = getOption("DT.fillContainer", NULL),)})
     output$countryDD <- DT::renderDT({
         tmp<- getCountrydataWDA(input$country)
-        DT::datatable(tmp,options = list(lengthMenu = c(5, 30, 50), pageLength = 5))})
+        DT::datatable(tmp,options = list(lengthMenu = c(5, 30, 50), pageLength = 5),fillContainer = getOption("DT.fillContainer", NULL),)})
     output$tsplotC<- renderPlotly({
         tsPlotCountry(input$country)
     })
@@ -881,11 +944,11 @@ server <- function(input, output, session){
     
     #----------------- Tab 3 -----------------
     
-    output$sum <- DT::renderDT(DT::datatable(getLatestStat(),options = list(lengthMenu = c(5, 30, 50), pageLength = 50)))
+    output$sum <- DT::renderDT(DT::datatable(getLatestStat(),options = list(lengthMenu = c(5, 30, 50), pageLength = 50),fillContainer = getOption("DT.fillContainer", NULL),))
     
     #----------------- Tab 4 -----------------
     
-    output$coronavirus <- DT::renderDT(DT::datatable(coronavirus,options = list(lengthMenu = c(5, 30, 50), pageLength = 50)))
+    output$coronavirus <- DT::renderDT(DT::datatable(coronavirus,options = list(lengthMenu = c(5, 30, 50), pageLength = 50),fillContainer = getOption("DT.fillContainer", NULL),))
     
     
     
@@ -893,6 +956,7 @@ server <- function(input, output, session){
     
     
 }
+
 
 
 shinyApp(ui, server)
