@@ -582,8 +582,14 @@ ui <- bs4Dash::dashboardPage(
         fixed = FALSE
     ),
     footer = bs4Dash::dashboardFooter(
-        "Designed by Ayush (https://ayushpkumar.com)    |      Data retrieved from John Hopkins University(https://github.com/CSSEGISandData/COVID-19)   | ",
-        copyrights = NULL,
+        a(
+            href = "https://github.com/CSSEGISandData/COVID-19", 
+            target = "_blank", "Data retrieved from John Hopkins University"
+        ),
+        copyrights = a(
+            href = "https://ayushpkumar.com", 
+            target = "_blank", "@ayushpkumar | "
+        ),
         right_text = 'March, 2020'
     ),
     #----------------- Sidebar -----------------
@@ -670,11 +676,13 @@ ui <- bs4Dash::dashboardPage(
                         
                         dropdownIcon = "wrench",
                         bs4Dash::bs4Card(
-                            print("This dashboard uses data from John Hopkins University Center for Systems Science and Engineering (JHU CSSE)
-                                    Created to inform people about the spread of corona virus through out world. This data is updated everyday by
-                                    sources which includes WHO ( World Health Organization ). The data is wrangled using R, and this dashboard is created
-                                    using Shiny Dashboard, FlexDashboard and BS4JDash( AdminLTE Themed )
-                                  "),
+                            
+                            htmlOutput('aboutTxt'),
+                            # text="This dashboard uses data from <b>John Hopkins University Center for Systems Science and Engineering (JHU CSSE)<b>
+                            #         Created to inform people about the spread of corona virus through out world. This data is updated everyday by
+                            #         sources which includes WHO ( World Health Organization ). <br>The data is wrangled using R, and this dashboard is created
+                            #         using Shiny Dashboard, FlexDashboard and BS4JDash( AdminLTE Themed )
+                            #       ",
                             width = 12
                             
                         )
@@ -873,6 +881,14 @@ ui <- bs4Dash::dashboardPage(
 server <- function(input, output, session){
     #----------------- Tab 1 -----------------
     
+    output$aboutTxt <- renderUI({
+        out = paste("This dashboard uses data from"," <b>","John Hopkins University Center for Systems Science and Engineering (JHU CSSE).","</b>","
+                                    Created to inform people about the spread of corona virus through out world. This data is updated everyday by
+                                    sources which includes WHO ( World Health Organization ).","<br>","The data is wrangled using R, and this dashboard is created
+                                    using Shiny Dashboard, FlexDashboard and BS4JDash( AdminLTE Themed )
+                                  ")
+        HTML(paste(out))
+    })
     output$plot2 <- renderPlotly({
         plotBar()
     })
