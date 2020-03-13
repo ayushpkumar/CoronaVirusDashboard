@@ -556,9 +556,10 @@ ddff<-coronavirus %>%
     pivot_wider(names_from = type,
                 values_from = total_cases) %>%
     arrange(-confirmed)
-totalDeaths<-sum(which(coronavirus$type =='death'))
-totalRecovery<- sum(which(coronavirus$type =='recovered'))
-totalCases <- sum(which(coronavirus$type =='confirmed'))
+gad<- getGlobalAnalyticData()
+totalDeaths<-sum(gad$death)
+totalRecovery<- sum(gad$recovered)
+totalCases <- sum(gad$confirmed)
 
 
 #----------------- UI -----------------
