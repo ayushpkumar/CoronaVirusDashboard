@@ -54,8 +54,9 @@ getCoronaData <- function(){
     #----------------------------------------------------
     # Pulling confirmed cases
     
-    raw_conf <- read.csv(file = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv",
+     raw_conf <- read.csv(file = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv",
                          stringsAsFactors = FALSE)
+    #x<-raw_conf[lapply(.SD, function(x) tail(x[!is.na(x)],1)),]
     # Transforming the data from wide to long
     # Creating new data frame
     df_conf <- raw_conf[, 1:4]
@@ -102,7 +103,7 @@ getCoronaData <- function(){
     #----------------------------------------------------
     # Pulling death cases
     
-    raw_death <- read.csv(file = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv",
+    raw_death <- read.csv(file = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv",
                           stringsAsFactors = FALSE)
     # Transforming the data from wide to long
     # Creating new data frame
@@ -111,7 +112,7 @@ getCoronaData <- function(){
     for(i in 5:ncol(raw_death)){
         print(i)
         raw_death[,i] <- as.integer(raw_death[,i])
-        raw_death[,i] <- ifelse(is.na(raw_death[, i]), raw_death[, i-1] , raw_death[, i])
+        raw_death[,i] <- ifelse(is.na(raw_death[, i]), raw_death[, i] , raw_death[, i])
         
         if(i == 5){
             df_death[[names(raw_death)[i]]] <- raw_death[, i]
@@ -150,7 +151,7 @@ getCoronaData <- function(){
     #----------------------------------------------------
     # Pulling recovered cases
     
-    raw_rec <- read.csv(file = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv",
+    raw_rec <- read.csv(file = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv",
                         stringsAsFactors = FALSE)
     # Transforming the data from wide to long
     # Creating new data frame
